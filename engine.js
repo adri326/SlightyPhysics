@@ -30,8 +30,8 @@ airFriction = 0.975,
 walljumpForceX = 0.7,
 walljumpForceY = 1,
 gravity = 0.3,
-jumpControl = 10.0,
-jumpForce = 20,
+jumpControl = 8,
+jumpForce = 15,
 grid = {
   sizeX: 10,
   sizeY: 10
@@ -73,6 +73,13 @@ function addGridBoxLine(x, y, dir, n, color = BASECOLOR) {
     }
   }
 }
+function addGridBoxRect(x1, y1, x2, y2, color = BASECOLOR) {
+  for (x = x1; x < x2; x++) {
+    for (y = y1; y < y2; y++) {
+      addGridBox(x, y, color);
+    }
+  }
+}
 function addExe(sx, sy, xl, yl, Code, color = BASECOLOR) {
     execute.push({
         x: sx,
@@ -102,6 +109,8 @@ function level1() {
   addGridBoxLine(30, getGridMaxY() - 1, DIR.Yminus, 5, "#8ec1f4");
   addGridBoxLine(25, getGridMaxY() - 1, DIR.Yminus, 3, "#2552d9");
   addGridBoxLine(20, getGridMaxY() - 1, DIR.Yminus, 1, "#0f228c");
+  addGridBoxLine(40, getGridMaxY() - 1, DIR.Yminus, 15, "#2552d9");
+  addGridBoxLine(45, getGridMaxY() - 1, DIR.Yminus, 15, "#2552d9");
 }
 
 function randBot() {
@@ -127,6 +136,9 @@ function randBot() {
         //player.velY = -player.speed * player.jumpForce / jumpControl;
         player.velY = -jumpForce * player.jumpForce / jumpControl;
       }
+      if (player.jumping > 1 - 1 / jumpControl) {
+        player.jumping = 0;
+      }
     } else {
       player.jumping = 0;
     }
@@ -145,7 +157,9 @@ function randBot() {
       player.velX *= groundFriction;
     }
     player.velX *= airFriction;
-    player.velY += gravity;
+    if (player.jumping == 0) {
+      player.velY += gravity;
+    }
     player.velY *= airFriction;
     player.grounded = false;
 
