@@ -12,7 +12,7 @@ player = {
   y: height-10,
   width: 10,
   height: 10,
-  speed: 2,
+  speed: 1.5,
   jumpForce: 1.9,
   velX: 0,
   velY: 0,
@@ -20,14 +20,14 @@ player = {
   grounded: false,
   color: "orange",
   walljump: true,
-  walljumpForce: 1.8
+  walljumpForce: 3.4
 },
 keys = [],
 boxes = [],
 execute=[],
-groundFriction = 0.6,
+groundFriction = 0.5,
 airFriction = 0.975,
-walljumpForceX = 0.9,
+walljumpForceX = 0.7,
 walljumpForceY = 1,
 gravity = 0.3,
 jumpControl = 8,
@@ -47,7 +47,7 @@ function getGridMaxY() {
   return canvas.height / grid.sizeY - 1;
 }
 
-function addBox(sx, sy, xl, yl, infos = {color: BASECOLOR, background: false, walljump: true}) {
+function addBox(sx, sy, xl, yl, infos = BASEINFOS) {
   boxes.push({
     x: sx,
     y: sy,
@@ -55,14 +55,16 @@ function addBox(sx, sy, xl, yl, infos = {color: BASECOLOR, background: false, wa
     height: yl,
     color: infos.color,
     background: infos.background,
-    walljump: infos.walljump
+    walljump: infos.walljump,
+    code: infos.code,
+    executable: infos.executable
   });
   return boxes.length-1;
 }
-function addGridBox(x, y, infos = {color: BASECOLOR, background: false, walljump: true}) {
+function addGridBox(x, y, infos = BASEINFOS) {
   addBox(x * grid.sizeX, y * grid.sizeY, grid.sizeX, grid.sizeY, infos);
 }
-function addGridBoxLine(x, y, dir, n, infos = {color: BASECOLOR, background: false, walljump: true}) {
+function addGridBoxLine(x, y, dir, n, infos = BASEINFOS) {
   for (i = 0; i < n; i++) {
     if (dir == DIR.Xminus) {
       addGridBox(x - i, y, infos);
@@ -75,23 +77,12 @@ function addGridBoxLine(x, y, dir, n, infos = {color: BASECOLOR, background: fal
     }
   }
 }
-function addGridBoxRect(x1, y1, x2, y2, infos = {color: BASECOLOR, background: false, walljump: true}) {
+function addGridBoxRect(x1, y1, x2, y2, infos = BASEINFOS) {
   for (x = x1; x <= x2; x++) {
     for (y = y1; y <= y2; y++) {
       addGridBox(x, y, infos);
     }
   }
-}
-function addExe(sx, sy, xl, yl, Code, color = BASECOLOR) {
-  execute.push({
-    x: sx,
-    y: sy,
-    width: xl,
-    height: yl,
-    code: Code,
-    color: color,
-  });
-  return execute.length-1;
 }
 function clearBox() {
   boxes = [];
@@ -161,7 +152,7 @@ function update() {
     ctx.fillStyle = "black";
     drawBox(boxes[i]);
 
-    var dir = colCheck(player, boxes[i]);
+    var dir = colCheck(player, boxes[i], boxes[i].background);
     if (boxes[i].background !== true) {
       if (dir === "r") {
         player.velX = 0;
@@ -182,18 +173,14 @@ function update() {
         player.velY *= -1;
       }
     }
-  }
-
-  for (var i = 0; i <  execute.length; i++) {
-    ctx.beginPath();
-    drawExe(execute[i]);
-
-    var dir = colCheck(player,  execute[i]);
-
-    if (dir === "r" || dir === "l" || dir === "b" || dir === "t") {
-      var code = execute[i].code;
-      execute.splice(i,1);
-      code();
+    if (boxes[i].executable === true) {
+      if (dir === "r" || dir === "l" || dir === "b" || dir === "t") {
+        var code = boxes[i].code;
+        if (boxes[i].uses !== null && boxes[i].uses >= boxes[i].used++) {
+          boxes.splice(i,1);
+        }
+        code();
+      }
     }
   }
 
@@ -229,7 +216,7 @@ function drawPlayer(p1) {
   ctx.fillRect(p1.x, p1.y, p1.width, p1.height);
 }
 
-function colCheck(shapeA, shapeB) {
+function colCheck(shapeA, shapeB, background = false) {
   // get the vectors to check against
   var vX = (shapeA.x + (shapeA.width / 2)) - (shapeB.x + (shapeB.width / 2)),
   vY = (shapeA.y + (shapeA.height / 2)) - (shapeB.y + (shapeB.height / 2)),
@@ -243,21 +230,29 @@ function colCheck(shapeA, shapeB) {
     // figures out on which side we are colliding (top, bottom, left, or right)
     var oX = hWidths - Math.abs(vX),
     oY = hHeights - Math.abs(vY);
-    if (oX >= oY) {
+    if (oX >= oY + player.speed * FIX_COLCHECK_LIMIT) {
       if (vY > 0) {
         colDir = "t";
-        shapeA.y += oY;
+        if (!background) {
+          shapeA.y += oY;
+        }
       } else {
         colDir = "b";
-        shapeA.y -= oY;
+        if (!background) {
+          shapeA.y -= oY;
+        }
       }
-    } else {
+    } else if (oX < oY - player.speed * FIX_COLCHECK_LIMIT){
       if (vX > 0) {
         colDir = "l";
-        shapeA.x += oX;
+        if (!background) {
+          shapeA.x += oX;
+        }
       } else {
         colDir = "r";
-        shapeA.x -= oX;
+        if (!background) {
+          shapeA.x -= oX;
+        }
       }
     }
   }

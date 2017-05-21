@@ -4,4 +4,6 @@ const DIR = {
   Yplus: 2,
   Yminux: 3
 },
-BASECOLOR = "black"
+BASECOLOR = "black",
+FIX_COLCHECK_LIMIT = true,
+BASEINFOS = {color: BASECOLOR, background: false, walljump: true, code: null, executable: false}
